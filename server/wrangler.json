@@ -1,0 +1,18 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"compatibility_date": "2025-02-04",
+	"kv_namespaces": [
+		{
+			"binding": "uploads",
+			"id": "b2921c8b3dd647db9b2ae9191cb95d4d"
+		}
+	],
+	"main": "src/index.ts",
+	"name": "file-upload-server",
+	"observability": {
+		"enabled": true
+	},
+	"assets": {
+		"directory": "../front/dist"
+	}
+}

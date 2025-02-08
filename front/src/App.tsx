@@ -25,6 +25,7 @@ const UploadForm = () => {
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		setMessage('');
 
 		if (!selectedFile) {
 			setMessage('Por favor, selecione um arquivo.');
@@ -34,7 +35,14 @@ const UploadForm = () => {
 		setIsLoading(true);
 
 		try {
-			await new Promise(resolve => setTimeout(resolve, 2000));
+			await fetch('http://localhost:8787/upload', {
+				body: selectedFile,
+				headers: {
+					'content-type': selectedFile.type
+				},
+				method: 'POST'
+			});
+
 			setMessage('Arquivo enviado com sucesso!');
 			setSelectedFile(null);
 
