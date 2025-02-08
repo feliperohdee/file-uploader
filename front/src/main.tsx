@@ -6,8 +6,8 @@ import { Toaster } from '@/components/ui/toaster';
 import App from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <App />
-        <Toaster />
-    </StrictMode>
+	<StrictMode>
+		<App />
+		<Toaster />
+	</StrictMode>
 );
