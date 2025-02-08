@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 
 const apiURL = import.meta.env.PROD
@@ -15,7 +16,9 @@ const apiURL = import.meta.env.PROD
 
 const UploadForm = () => {
 	const [isLoading, setIsLoading] = useState(false);
+	const [isPasswordEnabled, setIsPasswordEnabled] = useState(false);
 	const [message, setMessage] = useState('');
+	const [password, setPassword] = useState('');
 	const [qr, setQR] = useState('');
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [url, setUrl] = useState('');
@@ -35,6 +38,7 @@ const UploadForm = () => {
 		event.preventDefault();
 
 		setMessage('');
+		setQR('');
 		setUrl('');
 
 		if (!selectedFile) {
@@ -45,11 +49,17 @@ const UploadForm = () => {
 		setIsLoading(true);
 
 		try {
+			const formData = new FormData();
+
+			formData.append('content-type', selectedFile.type);
+			formData.append('file', selectedFile);
+
+			if (isPasswordEnabled && password) {
+				formData.append('password', password);
+			}
+
 			const res = await fetch(`${apiURL}/upload`, {
-				body: selectedFile,
-				headers: {
-					'content-type': selectedFile.type
-				},
+				body: formData,
 				method: 'POST'
 			});
 
@@ -61,7 +71,6 @@ const UploadForm = () => {
 
 			const qr = await qrcode.toDataURL(url);
 
-			setQR(qr);
 			toast({
 				className: 'bg-slate-900 border-slate-800 text-slate-50',
 				description: 'Seu arquivo foi enviado com sucesso',
@@ -69,7 +78,10 @@ const UploadForm = () => {
 				variant: 'default'
 			});
 
+			setQR(qr);
 			setSelectedFile(null);
+			setPassword('');
+
 			(event.target as HTMLFormElement).reset();
 		} catch {
 			setMessage('Erro ao enviar arquivo. Tente novamente.');
@@ -112,6 +124,39 @@ const UploadForm = () => {
 							className='cursor-pointer border-slate-800 bg-slate-900 text-slate-200 file:border-slate-700 file:bg-slate-800 file:text-slate-200 file:transition-colors hover:file:bg-slate-700'
 						/>
 					</div>
+
+					<div className='flex items-center justify-between space-x-2'>
+						<Label
+							htmlFor='password-toggle'
+							className='text-slate-200'
+						>
+							Proteger com senha
+						</Label>
+						<Switch
+							id='password-toggle'
+							checked={isPasswordEnabled}
+							onCheckedChange={setIsPasswordEnabled}
+						/>
+					</div>
+
+					{isPasswordEnabled ? (
+						<div className='space-y-2'>
+							<Label
+								htmlFor='password'
+								className='text-slate-200'
+							>
+								Senha
+							</Label>
+							<Input
+								id='password'
+								type='password'
+								value={password}
+								onChange={e => setPassword(e.target.value)}
+								className='border-slate-800 bg-slate-900 text-slate-200'
+								placeholder='Digite a senha'
+							/>
+						</div>
+					) : null}
 
 					{selectedFile ? (
 						<div className='text-sm text-slate-400'>
@@ -157,7 +202,7 @@ const UploadForm = () => {
 											className='text-slate-200'
 										>
 											<CloudDownload className='h-4 w-4' />
-											Dowload
+											Download
 										</a>
 									</Button>
 								) : null}

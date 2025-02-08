@@ -7,7 +7,7 @@
 			"id": "b2921c8b3dd647db9b2ae9191cb95d4d"
 		}
 	],
-	"main": "src/index.ts",
+	"main": "src/index.tsx",
 	"name": "file-upload-server",
 	"observability": {
 		"enabled": true

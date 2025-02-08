@@ -1,6 +1,23 @@
 const ONE_MINUTE_IN_SECONDS = 60;
 
-export default {
+const htmlWithPasswordPrompt = () => {
+	return `<html>
+			<head>
+				<title>Digite a senha para baixar o arquivo</title>
+			</head>
+			<body></body>
+			<script>
+				const password = window.prompt('Digite a senha para baixar o arquivo');
+				const url = new URL(window.location.href);
+
+				url.searchParams.set('password', password);
+
+				window.location.href = url.toString();
+			</script>
+		</html>`;
+};
+
+const handler = {
 	async fetch(
 		req: Request,
 		env: Env,
@@ -26,6 +43,7 @@ export default {
 			// get
 			if (req.method === 'GET') {
 				const id = url.searchParams.get('id');
+				const password = url.searchParams.get('password');
 
 				if (!id) {
 					return Response.json(
@@ -36,6 +54,7 @@ export default {
 
 				const file = await env.uploads.getWithMetadata<{
 					contentType: string;
+					password: string;
 				}>(id, 'arrayBuffer');
 
 				if (!file.value) {
@@ -43,6 +62,16 @@ export default {
 						{ error: 'File not found' },
 						{ status: 404 }
 					);
+				}
+
+				if (file.metadata?.password) {
+					if (password !== file.metadata.password) {
+						return new Response(htmlWithPasswordPrompt(), {
+							headers: {
+								'content-type': 'text/html'
+							}
+						});
+					}
 				}
 
 				const contentType =
@@ -58,13 +87,15 @@ export default {
 			// save
 			if (req.method === 'POST') {
 				const id = crypto.randomUUID();
-				const requestBodyAsArrayBuffer = await req.arrayBuffer();
-				const contentType = req.headers.get('content-type');
+				const requestBodyAsFormData = await req.formData();
+				const contentType = requestBodyAsFormData.get('content-type');
+				const fileBlob = requestBodyAsFormData.get('file') as Blob;
 
-				await env.uploads.put(id, requestBodyAsArrayBuffer, {
+				await env.uploads.put(id, await fileBlob.arrayBuffer(), {
 					expirationTtl: ONE_MINUTE_IN_SECONDS,
 					metadata: {
-						contentType
+						contentType,
+						password: requestBodyAsFormData.get('password') || ''
 					}
 				});
 
@@ -80,3 +111,5 @@ export default {
 		);
 	}
 };
+
+export default handler;
