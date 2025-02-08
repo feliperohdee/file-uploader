@@ -1,6 +1,4 @@
-const bytesToHumanReadable = (bytes: number) => {
-	return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-};
+const ONE_MINUTE_IN_SECONDS = 60;
 
 export default {
 	async fetch(
@@ -15,6 +13,7 @@ export default {
 			return new Response(null, { status: 204 });
 		}
 
+		// CORS headers
 		headers.set('Access-Control-Allow-Origin', '*');
 		headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 		headers.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -23,24 +22,61 @@ export default {
 			return new Response(null, { status: 204, headers });
 		}
 
-		const id = crypto.randomUUID();
+		if (url.pathname === '/upload') {
+			// get
+			if (req.method === 'GET') {
+				const id = url.searchParams.get('id');
 
-		if (url.pathname === '/upload' && req.method === 'POST') {
-			const id = crypto.randomUUID();
-			const requestBodyAsArrayBuffer = await req.arrayBuffer();
-			const contentType = req.headers.get('content-type');
-			const contentLength = req.headers.get('content-length');
+				if (!id) {
+					return Response.json(
+						{ error: 'ID is required' },
+						{ status: 400, headers }
+					);
+				}
 
-			console.log({
-				id,
-				contentLength: bytesToHumanReadable(Number(contentLength)),
-				contentType,
-				// requestBodyAsArrayBuffer
-			});
+				const file = await env.uploads.getWithMetadata<{
+					contentType: string;
+				}>(id, 'arrayBuffer');
 
-			// await env.uploads.put(id, requestBodyAsArrayBuffer);
+				if (!file.value) {
+					return Response.json(
+						{ error: 'File not found' },
+						{ status: 404 }
+					);
+				}
+
+				const contentType =
+					file.metadata?.contentType || 'application/octet-stream';
+
+				return new Response(file.value, {
+					headers: {
+						'content-type': contentType
+					}
+				});
+			}
+
+			// save
+			if (req.method === 'POST') {
+				const id = crypto.randomUUID();
+				const requestBodyAsArrayBuffer = await req.arrayBuffer();
+				const contentType = req.headers.get('content-type');
+
+				await env.uploads.put(id, requestBodyAsArrayBuffer, {
+					expirationTtl: ONE_MINUTE_IN_SECONDS,
+					metadata: {
+						contentType
+					}
+				});
+
+				return Response.json({ id }, { headers });
+			}
 		}
 
-		return Response.json({ error: 'Not found' }, { status: 404 });
+		return Response.json(
+			{
+				error: 'Not found'
+			},
+			{ status: 404, headers }
+		);
 	}
 };

@@ -2,4 +2,5 @@
 
 interface Env {
 	uploads: KVNamespace;
+	PRODUCTION: string;
 }

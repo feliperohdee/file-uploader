@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
+		"deploy": "cd ../front && bun run build && cd ../server && wrangler deploy",
 		"dev": "wrangler dev",
 		"lint": "prettier --write .",
 		"start": "wrangler dev",

@@ -14,5 +14,8 @@
 	},
 	"assets": {
 		"directory": "../front/dist"
+	},
+	"vars": {
+		"PRODUCTION": "true"
 	}
 }

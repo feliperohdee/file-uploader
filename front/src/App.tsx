@@ -1,5 +1,6 @@
-import { Upload } from 'lucide-react';
+import { CloudDownload, Upload } from 'lucide-react';
 import { useState } from 'react';
+import qrcode from 'qrcode';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -8,11 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
+const apiURL = import.meta.env.PROD
+	? 'https://file-upload-server.simpleimg.workers.dev'
+	: 'http://localhost:8787';
+
 const UploadForm = () => {
-	const { toast } = useToast();
-	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [message, setMessage] = useState('');
+	const [qr, setQR] = useState('');
+	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [url, setUrl] = useState('');
+	const { toast } = useToast();
 
 	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -20,12 +27,15 @@ const UploadForm = () => {
 		if (file) {
 			setSelectedFile(file);
 			setMessage('');
+			setUrl('');
 		}
 	};
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+
 		setMessage('');
+		setUrl('');
 
 		if (!selectedFile) {
 			setMessage('Por favor, selecione um arquivo.');
@@ -35,7 +45,7 @@ const UploadForm = () => {
 		setIsLoading(true);
 
 		try {
-			await fetch('http://localhost:8787/upload', {
+			const res = await fetch(`${apiURL}/upload`, {
 				body: selectedFile,
 				headers: {
 					'content-type': selectedFile.type
@@ -43,9 +53,15 @@ const UploadForm = () => {
 				method: 'POST'
 			});
 
-			setMessage('Arquivo enviado com sucesso!');
-			setSelectedFile(null);
+			const json = await res.json();
+			const url = `${apiURL}/upload?id=${json.id}`;
 
+			setMessage('Arquivo enviado com sucesso!');
+			setUrl(url);
+
+			const qr = await qrcode.toDataURL(url);
+
+			setQR(qr);
 			toast({
 				className: 'bg-slate-900 border-slate-800 text-slate-50',
 				description: 'Seu arquivo foi enviado com sucesso',
@@ -53,9 +69,11 @@ const UploadForm = () => {
 				variant: 'default'
 			});
 
+			setSelectedFile(null);
 			(event.target as HTMLFormElement).reset();
 		} catch {
 			setMessage('Erro ao enviar arquivo. Tente novamente.');
+			setUrl('');
 
 			toast({
 				description: 'Erro ao enviar arquivo. Tente novamente.',
@@ -114,7 +132,36 @@ const UploadForm = () => {
 									: ''
 							}
 						>
-							<AlertDescription>{message}</AlertDescription>
+							<AlertDescription className='flex flex-col items-start gap-2'>
+								{message}
+
+								{qr ? (
+									<img
+										alt='QR Code'
+										className='overflow-hidden rounded-lg'
+										height={150}
+										src={qr}
+										width={150}
+									/>
+								) : null}
+
+								{url ? (
+									<Button
+										className='mt-2 text-slate-900'
+										variant={'secondary'}
+										asChild
+									>
+										<a
+											href={url}
+											target='_blank'
+											className='text-slate-200'
+										>
+											<CloudDownload className='h-4 w-4' />
+											Dowload
+										</a>
+									</Button>
+								) : null}
+							</AlertDescription>
 						</Alert>
 					) : null}
 
