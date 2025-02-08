@@ -20,20 +20,19 @@ const htmlWithPasswordPrompt = () => {
 const handler = {
 	async fetch(
 		req: Request,
-		env: Env,
-		ctx: ExecutionContext
+		env: Env
 	): Promise<Response> {
-		const headers = new Headers();
 		const url = new URL(req.url);
-
+		
 		if (url.pathname.includes('favicon.ico')) {
 			return new Response(null, { status: 204 });
 		}
 
-		// CORS headers
-		headers.set('Access-Control-Allow-Origin', '*');
-		headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-		headers.set('Access-Control-Allow-Headers', 'Content-Type');
+		const headers = new Headers();
+
+		headers.set('access-control-allow-origin', '*');
+		headers.set('access-control-allow-methods', 'GET, POST, OPTIONS');
+		headers.set('access-control-allow-headers', 'Content-Type');
 
 		if (req.method === 'OPTIONS') {
 			return new Response(null, { status: 204, headers });
@@ -64,14 +63,12 @@ const handler = {
 					);
 				}
 
-				if (file.metadata?.password) {
-					if (password !== file.metadata.password) {
-						return new Response(htmlWithPasswordPrompt(), {
-							headers: {
-								'content-type': 'text/html'
-							}
-						});
-					}
+				if (file.metadata?.password && password !== file.metadata.password) {
+					return new Response(htmlWithPasswordPrompt(), {
+						headers: {
+							'content-type': 'text/html'
+						}
+					});
 				}
 
 				const contentType =

@@ -15,10 +15,10 @@ const apiURL = import.meta.env.PROD
 	: 'http://localhost:8787';
 
 const UploadForm = () => {
-	const [isLoading, setIsLoading] = useState(false);
-	const [isPasswordEnabled, setIsPasswordEnabled] = useState(false);
+	const [loading, setLoading] = useState(false);
 	const [message, setMessage] = useState('');
 	const [password, setPassword] = useState('');
+	const [passwordEnabled, setPasswordEnabled] = useState(false);
 	const [qr, setQR] = useState('');
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [url, setUrl] = useState('');
@@ -30,6 +30,7 @@ const UploadForm = () => {
 		if (file) {
 			setSelectedFile(file);
 			setMessage('');
+			setQR('');
 			setUrl('');
 		}
 	};
@@ -46,7 +47,7 @@ const UploadForm = () => {
 			return;
 		}
 
-		setIsLoading(true);
+		setLoading(true);
 
 		try {
 			const formData = new FormData();
@@ -54,7 +55,7 @@ const UploadForm = () => {
 			formData.append('content-type', selectedFile.type);
 			formData.append('file', selectedFile);
 
-			if (isPasswordEnabled && password) {
+			if (passwordEnabled && password) {
 				formData.append('password', password);
 			}
 
@@ -67,33 +68,34 @@ const UploadForm = () => {
 			const url = `${apiURL}/upload?id=${json.id}`;
 
 			setMessage('Arquivo enviado com sucesso!');
-			setUrl(url);
-
+			
 			const qr = await qrcode.toDataURL(url);
-
+			
 			toast({
 				className: 'bg-slate-900 border-slate-800 text-slate-50',
 				description: 'Seu arquivo foi enviado com sucesso',
 				title: 'Sucesso!',
 				variant: 'default'
 			});
-
+			
 			setQR(qr);
+			setUrl(url);
 			setSelectedFile(null);
 			setPassword('');
 
 			(event.target as HTMLFormElement).reset();
 		} catch {
-			setMessage('Erro ao enviar arquivo. Tente novamente.');
-			setUrl('');
-
 			toast({
 				description: 'Erro ao enviar arquivo. Tente novamente.',
 				title: 'Erro!',
 				variant: 'destructive'
 			});
+			
+			setMessage('Erro ao enviar arquivo. Tente novamente.');
+			setQR('');
+			setUrl('');
 		} finally {
-			setIsLoading(false);
+			setLoading(false);
 		}
 	};
 
@@ -134,12 +136,12 @@ const UploadForm = () => {
 						</Label>
 						<Switch
 							id='password-toggle'
-							checked={isPasswordEnabled}
-							onCheckedChange={setIsPasswordEnabled}
+							checked={passwordEnabled}
+							onCheckedChange={setPasswordEnabled}
 						/>
 					</div>
 
-					{isPasswordEnabled ? (
+					{passwordEnabled ? (
 						<div className='space-y-2'>
 							<Label
 								htmlFor='password'
@@ -213,9 +215,9 @@ const UploadForm = () => {
 					<Button
 						type='submit'
 						className='w-full bg-slate-800 text-slate-100 hover:bg-slate-700'
-						disabled={isLoading}
+						disabled={loading}
 					>
-						{isLoading ? 'Enviando...' : 'Enviar Arquivo'}
+						{loading ? 'Enviando...' : 'Enviar Arquivo'}
 					</Button>
 				</form>
 			</CardContent>
